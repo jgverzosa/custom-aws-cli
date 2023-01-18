@@ -35,7 +35,8 @@ Write-Host "`u{2728} Local Port: $localPort" -ForegroundColor green
 ""
 ## EC2 ###############################################################
 Write-Host " Retrieving Instance Id" -ForegroundColor white
-$Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=oov7-stack/OOV7ASG";
+# $Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=oov7-stack/OOV7ASG";
+$Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=delit-avmh-web-01";
 if (!$Instances) {
   "`u{1F6D1} No Instance"
   return
@@ -65,7 +66,7 @@ if ($storageType -eq 'rds') {
   Write-Host "`u{2728} $RdsInstancesId $tunnelPort" -ForegroundColor green
 }else {
   ## Redis connection ###################################################
-  $tunnelPort = 6380
+  $tunnelPort = 6379
   $RedisInstances = aws elasticache --profile $Prof describe-cache-clusters --show-cache-node-info --query 'CacheClusters[*].[CacheNodes[*].Endpoint.Address]' --output text;
   if (!$RedisInstances) {
     "`u{1F6D1} No Redis Instance"

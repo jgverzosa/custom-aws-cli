@@ -7,7 +7,7 @@ $messageServer = 'Select a server:'
 $resultServer = $host.ui.PromptForChoice($titleServer, $messageServer, $optionsServer, 0)
 switch ($resultServer) {
   0 { $serverName = "Asg"; $server = "oov7-stack/OOV7ASG" }
-  1 { $serverName = "Cloud"; $server = "delit-avmh-web-01" }
+  1 { $serverName = "Cloud"; $server = "delit-avmh-web" }
   2 { $serverName = "Webserv"; $server = "dsoft-avmh-webserv-01" }
 }
 Write-Host "`u{2728} Server: $serverName (Name: $server)" -ForegroundColor green
@@ -26,7 +26,7 @@ switch ($result) {
 }
 Write-Host "`u{2728} Environment: $Prof" -ForegroundColor green
 ""
-$Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=$server";
+$Instances = aws ec2 describe-instances --profile $Prof --output text --query "Reservations[*].Instances[*].InstanceId" --filter "Name=tag:Name,Values=$server*" "Name=instance-state-name,Values=running";
 
 if (!$Instances) {
   "`u{1F6D1} No Instance"
