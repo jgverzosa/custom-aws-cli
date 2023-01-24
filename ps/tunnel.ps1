@@ -37,6 +37,8 @@ Write-Host "`u{2728} Local Port: $localPort" -ForegroundColor green
 Write-Host " Retrieving Instance Id" -ForegroundColor white
 # $Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=oov7-stack/OOV7ASG";
 $Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=delit-avmh-web-01";
+$server = "delit-avmh-web"
+$Instances = aws ec2 describe-instances --profile $Prof --output text --query "Reservations[*].Instances[*].InstanceId" --filter "Name=tag:Name,Values=$server*" "Name=instance-state-name,Values=running";
 if (!$Instances) {
   "`u{1F6D1} No Instance"
   return
