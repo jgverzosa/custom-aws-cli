@@ -15,14 +15,14 @@ Write-Host "`u{2728} Server: $serverName (Name: $server)" -ForegroundColor green
 $stg = New-Object System.Management.Automation.Host.ChoiceDescription '&Staging', 'Staging'
 $prd = New-Object System.Management.Automation.Host.ChoiceDescription '&Production', 'Production'
 $dev = New-Object System.Management.Automation.Host.ChoiceDescription '&Development', 'Development'
-$options = [System.Management.Automation.Host.ChoiceDescription[]]($stg, $prd, $dev)
+$options = [System.Management.Automation.Host.ChoiceDescription[]]($dev, $stg, $prd)
 $title = ""
 $message = "Select AWS environment:"
 $result = $host.ui.PromptForChoice($title, $message, $options, 0)
 switch ($result) {
-  0 { $Prof = "ditstg" }
+  0 { $Prof = "ditdev" }
   1 { $Prof = "default" }
-  2 { $Prof = "ditdev" }
+  2 { $Prof = "ditstg" }
 }
 Write-Host "`u{2728} Environment: $Prof" -ForegroundColor green
 ""
