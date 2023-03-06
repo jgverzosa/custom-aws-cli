@@ -21,8 +21,8 @@ $message = "Select AWS environment:"
 $result = $host.ui.PromptForChoice($title, $message, $options, 0)
 switch ($result) {
   0 { $Prof = "ditdev" }
-  1 { $Prof = "default" }
-  2 { $Prof = "ditstg" }
+  1 { $Prof = "ditstg" }
+  2 { $Prof = "default" }
 }
 Write-Host "`u{2728} Environment: $Prof" -ForegroundColor green
 ""
