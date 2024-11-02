@@ -45,6 +45,8 @@ if ($InputInstanceId) {
 }
 Write-Host "`u{2705} Connecting to $InstanceId" -ForegroundColor green
 
-$Host.UI.RawUI.WindowTitle = "$serverName ($InstanceId)"
+Write-Host "aws --profile $Prof ssm start-session --target $InstanceId" -ForegroundColor yellow
+
+$Host.UI.RawUI.WindowTitle = "$serverName ($InstanceId) \n"
 
 aws --profile $Prof ssm start-session --target $InstanceId

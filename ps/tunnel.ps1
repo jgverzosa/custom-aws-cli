@@ -89,6 +89,7 @@ if ($storageType -eq 'rds') {
 
 ## START Session ###################################################
 $param = "{""host"":[""$RdsInstancesId""], ""portNumber"":[""$tunnelPort""], ""localPortNumber"":[""$localPort""]}"
+Write-Host "aws ssm start-session --target $InstanceId --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters $param --profile $Prof" -ForegroundColor yellow
 aws ssm start-session --target $InstanceId --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters $param --profile $Prof
 
 
