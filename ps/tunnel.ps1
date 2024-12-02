@@ -46,6 +46,13 @@ if (!$Instances) {
 $InstanceId = ($Instances -split '\n')[0]
 Write-Host "`u{2728} $InstanceId" -ForegroundColor green
 ""
+## Connect static dns  ###########################################
+$dnsDbList = @("rds.local.deliverit.com.au", "rds.replica.local.deliverit.com.au", "redis.local.deliverit.com.au")
+Write-Host "DNS DB List:"
+foreach ($dnsDb in $dnsDbList) {
+  Write-Host $dnsDb
+}
+""
 ## Connect to RDS or Redis  ###########################################
 if ($storageType -eq 'rds') {
   ## RDS connection ###################################################
