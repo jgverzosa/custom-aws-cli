@@ -51,7 +51,9 @@ $dnsDbList = @(
   "rds.local.deliverit.com.au", 
   "rds.replica.local.deliverit.com.au", 
   "redis.local.deliverit.com.au",
-  "redis.replica.local.deliverit.com.au"
+  "redis.replica.local.deliverit.com.au",
+  "studio.redis.local.deliverit.com.au",
+  "studio.redis.replica.local.deliverit.com.au"
 )
 Write-Host "DNS DB List:"
 foreach ($dnsDb in $dnsDbList) {
