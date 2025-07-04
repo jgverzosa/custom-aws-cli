@@ -1,15 +1,13 @@
 ## ENVIRONMENT ######################################################
 $stg = New-Object System.Management.Automation.Host.ChoiceDescription '&Staging', 'Staging '
 $prd = New-Object System.Management.Automation.Host.ChoiceDescription '&Production', 'Production'
-$dev = New-Object System.Management.Automation.Host.ChoiceDescription '&Development', 'Development'
-$options = [System.Management.Automation.Host.ChoiceDescription[]]($dev, $stg, $prd)
+$options = [System.Management.Automation.Host.ChoiceDescription[]]($stg, $prd)
 $title = 'AWS Environment Role'
 $message = 'Select AWS environment:'
 $result = $host.ui.PromptForChoice($title, $message, $options, 0)
 switch ($result) {
-  0 { $Prof = "ditdev" }
-  1 { $Prof = "ditstg" }
-  2 { $Prof = "default" }
+  0 { $Prof = "ditstg" }
+  1 { $Prof = "default" }
 }
 ""
 Write-Host "`u{2728} Environment: $Prof" -ForegroundColor green
@@ -33,29 +31,39 @@ if ($InputlocalPort) {
 }
 Write-Host "`u{2728} Local Port: $localPort" -ForegroundColor green
 ""
-## EC2 ###############################################################
-Write-Host " Retrieving Instance Id" -ForegroundColor white
-# $Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=oov7-stack/OOV7ASG";
-$Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=delit-avmh-web-01";
-$server = "delit-avmh-web"
-$Instances = aws ec2 describe-instances --profile $Prof --output text --query "Reservations[*].Instances[*].InstanceId" --filter "Name=tag:Name,Values=$server*" "Name=instance-state-name,Values=running";
-if (!$Instances) {
-  "`u{1F6D1} No Instance"
-  return
+
+function Ec2 {
+  ## EC2 ###############################################################
+  Write-Host " Retrieving Instance Id" -ForegroundColor white
+  # $Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=oov7-stack/OOV7ASG";
+  $Instances = aws ssm --profile $Prof describe-instance-information --output text --query "InstanceInformationList[*].[InstanceId]" --filters "Key=tag:Name,Values=delit-avmh-web-01";
+  $server = "oov7-stack/OOV7ASG"
+  $Instances = aws ec2 describe-instances --profile $Prof --output text --query "Reservations[*].Instances[*].InstanceId" --filter "Name=tag:Name,Values=$server*" "Name=instance-state-name,Values=running";
+  if (!$Instances) {
+    "`u{1F6D1} No Instance"
+    return
+  }
+  $InstanceId = ($Instances -split '\n')[0]
+  Write-Host "`u{2728} $InstanceId" -ForegroundColor green
+  return $InstanceId
 }
-$InstanceId = ($Instances -split '\n')[0]
-Write-Host "`u{2728} $InstanceId" -ForegroundColor green
-""
+
 ## Connect static dns  ###########################################
-$dnsDbList = @(
-  "rds.local.deliverit.com.au", 
-  "rds.replica.local.deliverit.com.au", 
-  "redis.local.deliverit.com.au",
-  "redis.replica.local.deliverit.com.au",
-  "studio.redis.local.deliverit.com.au",
-  "studio.redis.replica.local.deliverit.com.au"
-)
-Write-Host "DNS DB List:"
+if ($storageType -eq 'rds') {
+  $dnsDbList = @(
+    "rds.local.deliverit.com.au", 
+    "rds.replica.local.deliverit.com.au", 
+    "cloud.local.deliverit.com.au", 
+    "cloud-read.local.deliverit.com.au"
+  )
+} if ($storageType -eq 'redis') {
+  $dnsDbList = @(
+    "redis.local.deliverit.com.au", 
+    "redis.replica.local.deliverit.com.au"
+  )
+}
+
+Write-Host "Storage Host List:"
 foreach ($dnsDb in $dnsDbList) {
   Write-Host $dnsDb
 }
@@ -64,14 +72,15 @@ foreach ($dnsDb in $dnsDbList) {
 if ($storageType -eq 'rds') {
   ## RDS connection ###################################################
   $tunnelPort = 3306
-  $RdsInstances = aws rds --profile $Prof describe-db-instances --query 'DBInstances[*].[Endpoint.[Address]]' --output text;
-  if (!$RdsInstances) {
-    "`u{1F6D1} No RDS Instance"
-    return
-  }
-  "RDS Instance List:"
-  $RdsInstances
-  ""
+  $RdsInstances = $dnsDbList -join "`n";
+  # $RdsInstances = aws rds --profile $Prof describe-db-instances --query 'DBInstances[*].[Endpoint.[Address]]' --output text;
+  # if (!$RdsInstances) {
+  #   "`u{1F6D1} No RDS Instance"
+  #   return
+  # }
+  # "RDS Instance List:"
+  # $RdsInstances
+  # ""
   $RdsInstancesId = ($RdsInstances -split '\n')[0]
   $RdsInputInstanceId = ""
   $RdsInputInstanceId = Read-Host -Prompt "Enter RDS Instance [?] Help (default is '$RdsInstancesId')";
@@ -80,17 +89,21 @@ if ($storageType -eq 'rds') {
   }
   Write-Host "`u{2705} Tunneling RDS (Relational Database Service)..." -ForegroundColor green
   Write-Host "`u{2728} $RdsInstancesId $tunnelPort" -ForegroundColor green
+  ""
+  $InstanceId = Ec2;
+  ""
 }else {
   ## Redis connection ###################################################
   $tunnelPort = 6379
-  $RedisInstances = aws elasticache --profile $Prof describe-cache-clusters --show-cache-node-info --query 'CacheClusters[*].[CacheNodes[*].Endpoint.Address]' --output text;
-  if (!$RedisInstances) {
-    "`u{1F6D1} No Redis Instance"
-    return
-  }
-  "Redis Instance List:"
-  $RedisInstances
-  ""
+  $RedisInstances = $dnsDbList -join "`n";
+  # $RedisInstances = aws elasticache --profile $Prof describe-cache-clusters --show-cache-node-info --query 'CacheClusters[*].[CacheNodes[*].Endpoint.Address]' --output text;
+  # if (!$RedisInstances) {
+  #   "`u{1F6D1} No Redis Instance"
+  #   return
+  # }
+  # "Redis Instance List:"
+  # $RedisInstances
+  # ""
   $RdsInstancesId = ($RedisInstances -split '\n')[0]
   $RdsInputInstanceId = ""
   $RdsInputInstanceId = Read-Host -Prompt "Enter RDS Instance [?] Help (default is '$RdsInstancesId')";
@@ -99,6 +112,9 @@ if ($storageType -eq 'rds') {
   }
   Write-Host "`u{2705} Tunneling ElatiCache ""Redis""..." -ForegroundColor green
   Write-Host "`u{2728} $RdsInstancesId $tunnelPort" -ForegroundColor green
+  ""
+  $InstanceId = Ec2;
+  ""
 }
 
 ## START Session ###################################################
